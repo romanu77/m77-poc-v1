@@ -1,4 +1,3 @@
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
@@ -22,3 +21,6 @@ def build_vectorstore_from_text(raw_text):
     print("[VectorStore] Creating FAISS vector store...")
     vectorstore = FAISS.from_documents(documents, embeddings)
     return vectorstore
+
+def get_relevant_documents(vectorstore, query: str, k: int = 4):
+    return vectorstore.similarity_search(query, k=k)
