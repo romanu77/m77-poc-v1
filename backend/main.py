@@ -1,54 +1,55 @@
-# backend/main.py
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-import uvicorn
+from fastapi.staticfiles import StaticFiles
 import os
 
-from backend.loader.files import load_all_files
-from backend.loader.links import load_all_links
-from backend.vector_store import build_vectorstore_from_text
-from backend.chat import generate_answer
-from backend.logger.chat_logger import log_message
+from backend.vector_store import build_vectorstore_from_text, get_relevant_documents
+from backend.llm import ask_llm
+from backend.file_loader import load_files_and_links
+from backend.prompt_loader import load_prompt
 
 app = FastAPI()
 
+# CORS (pentru frontend local sau deploy)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load vectorstore
+# Servește fișierele statice din frontend
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+# Încarcă vectorii și promptul la startup
 print("[App] Loading files and links...")
-file_text = load_all_files()
-link_text = load_all_links()
-combined_text = file_text + "\n" + link_text
+combined_text = load_files_and_links()
 
 print("[App] Building vectorstore...")
 VECTORSTORE = build_vectorstore_from_text(combined_text)
 
+print("[App] Loading prompt...")
+PROMPT_TEMPLATE = load_prompt()
+
 @app.post("/chat")
 async def chat(request: Request):
     data = await request.json()
-    question = data.get("message", "").strip()
+    message = data.get("message", "")
 
-    if not question:
-        return {"answer": "Please provide a question."}
+    print("[Chat] Searching vector store for relevant context...")
+    context_docs = get_relevant_documents(VECTORSTORE, message)
 
-    log_message("User", question)
-    answer = generate_answer(question, VECTORSTORE)
-    log_message("Bot", answer)
+    print("[Chat] Calling LLM...")
+    response = ask_llm(message, context_docs, PROMPT_TEMPLATE)
+    return {"answer": response}
 
-    return {"answer": answer}
-
-# 👇 Adaugă ruta pentru index.html
+# Servește index.html pe ruta principală
 @app.get("/")
 async def serve_index():
     return FileResponse(os.path.join("frontend", "index.html"))
 
-if __name__ == "__main__":
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+# Orice altă rută necunoscută duce tot la index.html (pentru compatibilitate)
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    return FileResponse(os.path.join("frontend", "index.html"))
