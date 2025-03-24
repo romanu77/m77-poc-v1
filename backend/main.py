@@ -11,7 +11,10 @@ from backend.prompt_loader import load_prompt
 
 app = FastAPI()
 
-# CORS (pentru frontend local sau deploy)
+# 🔥 Absolute path to the frontend directory
+frontend_path = os.path.abspath("frontend")
+
+# ✅ Enable CORS (required for frontend access)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,10 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Servește fișierele statice din frontend
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+# ✅ Serve static files (JS, CSS, images, etc.)
+app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
-# Încarcă vectorii și promptul la startup
+# 🔄 Load documents and vector store on startup
 print("[App] Loading files and links...")
 combined_text = load_files_and_links()
 
@@ -32,6 +35,7 @@ VECTORSTORE = build_vectorstore_from_text(combined_text)
 print("[App] Loading prompt...")
 PROMPT_TEMPLATE = load_prompt()
 
+# 🧠 Chat endpoint
 @app.post("/chat")
 async def chat(request: Request):
     data = await request.json()
@@ -44,12 +48,12 @@ async def chat(request: Request):
     response = ask_llm(message, context_docs, PROMPT_TEMPLATE)
     return {"answer": response}
 
-# Servește index.html pe ruta principală
+# 🏠 Serve index.html for root route
 @app.get("/")
 async def serve_index():
-    return FileResponse(os.path.join("frontend", "index.html"))
+    return FileResponse(os.path.join(frontend_path, "index.html"))
 
-# Orice altă rută necunoscută duce tot la index.html (pentru compatibilitate)
+# 🔁 Fallback route for SPA support
 @app.get("/{full_path:path}")
 async def catch_all(full_path: str):
-    return FileResponse(os.path.join("frontend", "index.html"))
+    return FileResponse(os.path.join(frontend_path, "index.html"))
