@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f9f9f9;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background: #1e1e1e;
+      color: #eee;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 700px;
+      height: 90vh;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+
+    body.dark .chat-container {
+      background: #2b2b2b;
+    }
+
+    .chat-header {
+      padding: 1rem;
+      background: #2b2b2b;
+      color: white;
+      font-weight: 600;
+      font-size: 1.2rem;
+      text-align: center;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .chat-header img {
+      height: 32px;
+    }
+
+    .toggle-theme {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: white;
+    }
+
+    .chat-window {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      background: #f3f4f6;
+    }
+
+    body.dark .chat-window {
+      background: #1a1a1a;
+    }
+
+    .message {
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .message strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: #111827;
+    }
+
+    body.dark .message strong {
+      color: #ddd;
+    }
+
+    .chat-form {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-top: 1px solid #e5e7eb;
+      background: #fff;
+      gap: 0.5rem;
+    }
+
+    body.dark .chat-form {
+      background: #2b2b2b;
+      border-color: #444;
+    }
+
+    .chat-form input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #2b2b2b;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: #fff;
+      color: #000;
+    }
+
+    body.dark .chat-form input {
+      background: #2b2b2b;
+      color: white;
+    }
+
+    .chat-form button {
+      position: relative;
+      overflow: hidden;
+      padding: 0.75rem 1.25rem;
+      background: #2b2b2b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .chat-form button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 200%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      transition: transform 0.4s, opacity 0.8s;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .chat-form button:active::after {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0;
+    }
+
+    .chat-form button:hover {
+      background: #1e1e1e;
+      transform: translateY(-2px);
+    }
+
+    .clear-chat {
+      padding: 0.75rem 1rem;
+      background: transparent;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .clear-chat:hover {
+      background: #f3f3f3;
+      transform: scale(1.05);
+    }
+
+    body.dark .clear-chat {
+      border-color: #666;
+      color: #eee;
+    }
+
+    body.dark .clear-chat:hover {
+      background: #333;
+    }
+
+    .typing-indicator {
+      display: inline-block;
+      margin-left: 5px;
+    }
+
+    .typing-indicator span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin: 0 2px;
+      background: #999;
+      border-radius: 50%;
+      animation: blink 1.2s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes blink {
+      0%, 80%, 100% {
+        opacity: 0.2;
+      }
+      40% {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="Bot" />
+      AI Chatbot
+      <button id="toggle-theme" class="toggle-theme" title="Toggle theme">💡</button>
+    </div>
+    <div class="chat-window" id="chat-window"></div>
+    <form id="chat-form" class="chat-form">
+      <input type="text" id="user-input" placeholder="Ask me anything..." autocomplete="off" />
+      <button type="submit">➤</button>
+      <button type="button" id="clear-chat" class="clear-chat" title="Clear chat">🗑️</button>
+    </form>
+  </div>
+
+  <script>
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const chatWindow = document.getElementById('chat-window');
+    const toggleTheme = document.getElementById('toggle-theme');
+    const clearChat = document.getElementById('clear-chat');
+
+    function addMessage(sender, text) {
+      const msg = document.createElement('div');
+      msg.classList.add('message');
+      const parsedText = text.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+      msg.innerHTML = `<strong>${sender}:</strong> ${parsedText}`;
+      chatWindow.appendChild(msg);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+      saveChatToSession();
+    }
+
+    function addTypingIndicator() {
+      const typing = document.createElement('div');
+      typing.classList.add('message');
+      typing.id = 'typing-indicator';
+      typing.innerHTML = `<strong>Bot:</strong> <span class="typing-indicator"><span></span><span></span><span></span></span>`;
+      chatWindow.appendChild(typing);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const typing = document.getElementById('typing-indicator');
+      if (typing) typing.remove();
+    }
+
+    function welcomeMessage() {
+      addMessage('Bot', `👋 Hello! I'm your AI assistant, ready to help you.  \n💬 Ask me a question to get started!`);
+    }
+
+    function saveChatToSession() {
+      sessionStorage.setItem('chatHTML', chatWindow.innerHTML);
+    }
+
+    function loadChatFromSession() {
+      const saved = sessionStorage.getItem('chatHTML');
+      if (saved) chatWindow.innerHTML = saved;
+    }
+
+    function saveTheme() {
+      const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('chatTheme', theme);
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem('chatTheme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+        toggleTheme.textContent = '🔦';
+      }
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      addMessage('You', message);
+      userInput.value = '';
+
+      addTypingIndicator();
+
+      try {
+        const res = await fetch('http://localhost:8000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        removeTypingIndicator();
+        addMessage('Bot', data.answer);
+      } catch (err) {
+        removeTypingIndicator();
+        addMessage('Bot', '⚠️ Error connecting to the server.');
+      }
+    });
+
+    toggleTheme.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      toggleTheme.textContent = document.body.classList.contains('dark') ? '🔦' : '💡';
+      saveTheme();
+    });
+
+    clearChat.addEventListener('click', () => {
+      chatWindow.innerHTML = '';
+      sessionStorage.removeItem('chatHTML');
+      welcomeMessage();
+    });
+
+    window.onload = () => {
+      loadTheme();
+      loadChatFromSession();
+      if (!sessionStorage.getItem('chatHTML')) welcomeMessage();
+    }
+  </script>
+</body>
+</html>
