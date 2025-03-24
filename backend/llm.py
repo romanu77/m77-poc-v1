@@ -1,7 +1,6 @@
 import os
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
-
 from backend.config import API_KEYS
 
 def ask_llm(message, context_docs, prompt_template):
