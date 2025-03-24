@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os
 
@@ -49,11 +49,15 @@ async def chat(request: Request):
     return {"answer": response}
 
 # 🏠 Serve index.html for root route
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def serve_index():
-    return FileResponse(os.path.join(frontend_path, "index.html"))
+    index_path = os.path.join(frontend_path, "index.html")
+    print(f"Serving: {index_path}")
+    return FileResponse(index_path, media_type="text/html")
 
 # 🔁 Fallback route for SPA support
-@app.get("/{full_path:path}")
+@app.get("/{full_path:path}", response_class=HTMLResponse)
 async def catch_all(full_path: str):
-    return FileResponse(os.path.join(frontend_path, "index.html"))
+    index_path = os.path.join(frontend_path, "index.html")
+    print(f"Catch-all: serving {index_path}")
+    return FileResponse(index_path, media_type="text/html")
