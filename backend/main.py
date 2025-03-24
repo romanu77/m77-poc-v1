@@ -6,7 +6,7 @@ import os
 
 from backend.vector_store import build_vectorstore_from_text, get_relevant_documents
 from backend.llm import ask_llm
-from backend.file_loader import load_files_and_links
+from backend.loader.files import load_all_files, load_all_links
 from backend.prompt_loader import load_prompt
 
 app = FastAPI()
@@ -27,7 +27,9 @@ app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 # 🔄 Load documents and vector store on startup
 print("[App] Loading files and links...")
-combined_text = load_files_and_links()
+file_text = load_all_files()
+link_text = load_all_links()
+combined_text = file_text + "\n" + link_text
 
 print("[App] Building vectorstore...")
 VECTORSTORE = build_vectorstore_from_text(combined_text)
